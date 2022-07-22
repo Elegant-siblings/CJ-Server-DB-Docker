@@ -1,5 +1,9 @@
 FROM mysql
 
-EXPOSE 3306
+COPY ./cj_delivery.csv /var/lib/mysql-files/
 
-COPY ./testdump.sql /docker-entrypoint-initdb.d/
+COPY ./sql/create_table.sql /docker-entrypoint-initdb.d/
+
+RUN ["chmod", "+x", "/docker-entrypoint-initdb.d/create_table.sql"]
+
+EXPOSE 3306

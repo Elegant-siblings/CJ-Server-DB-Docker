@@ -11,7 +11,23 @@ const connection = mysql.createPool({
 });
 
 app.get("/", (req, res) => {
-  connection.query("SELECT * FROM Student", (err, rows) => {
+  connection.query("SELECT * FROM deliveryInfo", (err, rows) => {
+    if (err) {
+      res.json({
+        success: false, 
+        err,
+      });
+    } else {
+      res.json({
+        success: true,
+        rows,
+      });
+    }
+  });
+});
+
+app.get("/test", (req, res) => {
+  connection.query("SELECT * FROM deliveryInfo", (err, rows) => {
     if (err) {
       res.json({
         success: false,
@@ -25,5 +41,6 @@ app.get("/", (req, res) => {
     }
   });
 });
+
 
 app.listen(3000, () => console.log("listining on port 3000"));
