@@ -11,7 +11,9 @@ const connection = mysql.createPool({
   database: process.env.MYSQL_DATABASE || "test",
 });
 
-app.get("/", (req, res) => {
+
+
+app.get("/deliveryInfo", (req, res) => {
   connection.query("SELECT * FROM deliveryInfo", (err, rows) => {
     if (err) {
       res.json({
@@ -27,7 +29,39 @@ app.get("/", (req, res) => {
   });
 });
 
-function reciverConvert(address){
+app.get("/workInfo", (req, res) => {
+  connection.query("SELECT * FROM workInfo", (err, rows) => {
+    if (err) {
+      res.json({
+        success: false, 
+        err,
+      });
+    } else {
+      res.json({
+        success: true,
+        rows,
+      });
+    }
+  });
+});
+
+app.get("/workItem", (req, res) => {
+  connection.query("SELECT * FROM workItem", (err, rows) => {
+    if (err) {
+      res.json({
+        success: false, 
+        err,
+      });
+    } else {
+      res.json({
+        success: true,
+        rows,
+      });
+    }
+  });
+});
+
+function receiverConvert(address){
   if(typeof(address) == "string"){
     address = ["'"+String(address)+"'"]
     return address
@@ -39,25 +73,30 @@ function reciverConvert(address){
 
 app.get("/works", (req, res) => {
   deliveryDate = req.query.deliveryDate
-  reciverAdd1 = reciverConvert(req.query.reciverAdd1)
-  reciverAdd2 = reciverConvert(req.query.reciverAdd2)
+  receiverAdd1 = "'"+req.query.receiverAdd1.split(',').join("','")+"'"
+  receiverAdd2 = "'"+req.query.receiverAdd2.split(',').join("','")+"'"
 
-  connection.query("SELECT * FROM deliveryInfo WHERE deliveryDate="+deliveryDate+" AND reciverAddr1 IN ("+reciverAdd1+") AND reciverAddr2 IN ("+reciverAdd2+") LIMIT 100", (err, rows) => {
+  console.log(receiverAdd1)
+  console.log(receiverAdd2)
+  // receiverAdd1 = receiverConvert(req.query.receiverAdd1)
+  // receiverAdd2 = receiverConvert(req.query.receiverAdd2)
+
+  connection.query("SELECT * FROM deliveryInfo WHERE deliveryDate="+deliveryDate+" AND receiverAddr1 IN ("+receiverAdd1+") AND receiverAddr2 IN ("+receiverAdd2+") LIMIT 100", (err, rows) => {
     if (err) {
       res.json({
         success: false,
         err,
       });
     } else {
-      console.log(rows)
+      // console.log(rows)
       rows = rows.map((v) => { return {
         deliveryPK: v['deliveryPK'],
-        itemType: v['itemCategory'],
-        reciverAddr: [v['reciverAddr1'],v['reciverAddr2'],v['reciverAddr3']].join(' ')
+        itemCategory: v['itemCategory'],
+        receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' ')
       }})
       res.json({
         success: true,
-        rows,
+        rows: [ rows ] ,
       });
     }
   });
@@ -101,8 +140,8 @@ app.get("/works/register", (req, res) => {
     deliveryPK.map((v) => {
       connection.query(String.format("SELECT * FROM deliveryInfo WHERE deliveryPK={0}", v), (err, row) => {
           row = row[0]
-          connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})",
-          v, workPK, SQLString(row['sender']), SQLString(row['reciver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['reciverAddr1']), SQLString(row['reciverAddr2']), SQLString(row['reciverAddr3'])), (err, ans) => {
+          connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0)",
+          v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
             if(err) {
               throw err
             }
@@ -113,7 +152,7 @@ app.get("/works/register", (req, res) => {
   });
 });
 
-app.get("/works/detail", (req, res) => {
+app.get("/works/check", (req, res) => {
   deliveryManID = req.query.deliveryManID
   type = ['일반 배송', '집화 / 반품']
   time = ['주간', '새벽']
@@ -128,10 +167,30 @@ app.get("/works/detail", (req, res) => {
       deliveryType: type[v['deliveryType']],
       deliveryTime: time[v['deliveryTime']],
       deliveryCar: v['deliveryCar'],
-      terminalAddr: terminalAddress[v['terminalAddr']]
+      terminalAddr: terminalAddress[v['terminalAddr']],
     }})
     res.json({
-      rows
+      rows: [rows]
+    })
+  })
+});
+
+app.get("/works/itemlist", (req, res) => {
+  workPK = req.query.workPK
+  connection.query(String.format("SELECT * FROM workItem WHERE workPK={0}", workPK), (err, rows) => {
+    if(err){
+      throw err
+    }
+    rows = rows.map((v) => { return {
+      deliveryPK: v['deliveryPK'],
+      sender: v['sender'],
+      receiver: v['receiver'],
+      itemCategory: v['itemCategory'],
+      senderAddr: [v['senderAddr1'],v['senderAddr2'],v['senderAddr3']].join(' '),
+      receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' ')
+    }})
+    res.json({
+      rows: [rows]
     })
   })
 });
