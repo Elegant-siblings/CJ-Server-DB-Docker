@@ -19,7 +19,15 @@ CREATE TABLE workItem(
        receiverAddr1 VARCHAR(60),
        receiverAddr2 VARCHAR(60),
        receiverAddr3 VARCHAR(60),
-       complete Boolean
+       complete INT
+);
+CREATE TABLE itemDetail(
+       deliveryPK INT PRIMARY KEY,
+       comment VARCHAR(200),
+       completeTime DATETIME,
+       receipt VARCHAR(15),
+       recipient VARCHAR(15),
+       picture BLOB
 );
 CREATE TABLE deliveryInfo(
        deliveryPK INT PRIMARY KEY, 

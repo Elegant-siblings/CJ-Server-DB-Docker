@@ -1,6 +1,6 @@
 const express = require("express");
 const mysql = require("mysql");
-const { INTEGER } = require("sequelize");
+const nodeGeocoder = require('node-geocoder');
 const app = express();
 
 const connection = mysql.createPool({
@@ -10,8 +10,6 @@ const connection = mysql.createPool({
   password: process.env.MYSQL_PASSWORD || "password",
   database: process.env.MYSQL_DATABASE || "test",
 });
-
-
 
 app.get("/deliveryInfo", (req, res) => {
   connection.query("SELECT * FROM deliveryInfo", (err, rows) => {
@@ -61,23 +59,27 @@ app.get("/workItem", (req, res) => {
   });
 });
 
-function receiverConvert(address){
-  if(typeof(address) == "string"){
-    address = ["'"+String(address)+"'"]
-    return address
-  }
-  else{
-    return address.map((v) => {return "'"+String(v)+"'"})
-  }
-}
+app.get("/item", (req, res) => {
+  connection.query("SELECT * FROM itemDetail", (err, rows) => {
+    if (err) {
+      res.json({
+        success: false, 
+        err,
+      });
+    } else {
+      res.json({
+        success: true,
+        rows,
+      });
+    }
+  });
+});
 
 app.get("/works", (req, res) => {
   deliveryDate = req.query.deliveryDate
   receiverAdd1 = "'"+req.query.receiverAdd1.split(',').join("','")+"'"
   receiverAdd2 = "'"+req.query.receiverAdd2.split(',').join("','")+"'"
 
-  console.log(receiverAdd1)
-  console.log(receiverAdd2)
   // receiverAdd1 = receiverConvert(req.query.receiverAdd1)
   // receiverAdd2 = receiverConvert(req.query.receiverAdd2)
 
@@ -125,31 +127,52 @@ app.get("/works/register", (req, res) => {
   terminalAddr = "'"+String(req.query.terminalAddr)+"'"
 
   workPK = -1
-  connection.query(String.format("INSERT INTO workInfo VALUES (NULL, {0}, {1}, {2}, {3}, {4}, {5})",
-    deliveryManID,deliveryDate,deliveryType,deliveryTime,deliveryCar,terminalAddr), (err, rows) => {
-    if (err) {
-      throw err
-    }
-    console.log("1 recored inserted workInfo table")
-    connection.query("SELECT MAX(workPK) FROM workInfo", (err, rows) => {
-      if (err) {
-        throw err
-      }
-      workPK = rows[0]['MAX(workPK)']
-    });
-    deliveryPK.map((v) => {
-      connection.query(String.format("SELECT * FROM deliveryInfo WHERE deliveryPK={0}", v), (err, row) => {
-          row = row[0]
-          connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0)",
-          v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
-            if(err) {
-              throw err
-            }
+  connection.query(String.format("SELECT COUNT(*) FROM workInfo WHERE workPK={0}", workPK), (err, rows) => {
+    if(rows != 0){
+        connection.query(String.format("INSERT INTO workInfo VALUES (NULL, {0}, {1}, {2}, {3}, {4}, {5})",
+        deliveryManID,deliveryDate,deliveryType,deliveryTime,deliveryCar,terminalAddr), (err, rows) => {
+        if (err) {
+          es.json({
+            success: false, 
+            err,
+          });
+        }
+        console.log("1 recored inserted workInfo table")
+        connection.query("SELECT MAX(workPK) FROM workInfo", (err, rows) => {
+          if (err) {
+            
+          }
+          workPK = rows[0]['MAX(workPK)']
+        });
+        deliveryPK.map((v) => {
+          console.log(String.format("INSERT INTO itemDetail VALUES ({0},{1},{2},{3},{4},{5})", v, "'개가뭅니다'", "NULL", "NULL", "NULL", "NULL"))
+          connection.query(String.format("INSERT INTO itemDetail VALUES ({0},{1},{2},{3},{4},{5})", v, "'개가뭅니다'", "NULL", "NULL", "NULL", "NULL"), (err, row) => {})
+          connection.query(String.format("SELECT * FROM deliveryInfo WHERE deliveryPK={0}", v), (err, row) => {
+            row = row[0]
+            connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0)",
+            v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
+              if(err) {
+                es.json({
+                  success: false, 
+                  err,
+                });
+              }
+            })
           })
+        });
+        console.log(String(deliveryPK.length)+" recored inserted workItem table")
+        res.json({
+          sucess: true
         })
       });
-      console.log(String(deliveryPK.length)+" recored inserted workItem table")
-  });
+    }
+    else{
+      res.json({
+        sucess: False,
+        msg: "already exists workPK"
+      })
+    }
+  })
 });
 
 app.get("/works/check", (req, res) => {
@@ -157,9 +180,12 @@ app.get("/works/check", (req, res) => {
   type = ['일반 배송', '집화 / 반품']
   time = ['주간', '새벽']
   terminalAddress = {'서울' : '서울 서초구 4번길 14-2길'}
-  connection.query(String.format("SELECT * FROM workInfo WHERE deliveryManID={0}", deliveryManID), (err, rows) => {
+  connection.query(String.format("SELECT * FROM workInfo WHERE deliveryManID='{0}'", deliveryManID), (err, rows) => {
     if(err){
-      throw err
+      es.json({
+        success: false, 
+        err,
+      });
     }
     rows = rows.map((v) => { return {
       workPK: v['workPK'],
@@ -170,7 +196,7 @@ app.get("/works/check", (req, res) => {
       terminalAddr: terminalAddress[v['terminalAddr']],
     }})
     res.json({
-      rows: [rows]
+      rows: rows
     })
   })
 });
@@ -179,7 +205,10 @@ app.get("/works/itemlist", (req, res) => {
   workPK = req.query.workPK
   connection.query(String.format("SELECT * FROM workItem WHERE workPK={0}", workPK), (err, rows) => {
     if(err){
-      throw err
+      es.json({
+        success: false, 
+        err,
+      });
     }
     rows = rows.map((v) => { return {
       deliveryPK: v['deliveryPK'],
@@ -190,22 +219,113 @@ app.get("/works/itemlist", (req, res) => {
       receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' ')
     }})
     res.json({
-      rows: [rows]
+      rows: rows
     })
   })
 });
 
-app.get("/test", (req, res) => {
-  res.json({
-    start: ["35.46650", "129.24949"],
-    waypoint : [
-      ["35.47768", "129.09151"],
-      ["35.36360", "129.10525"],
-      ["35.33226", "128.97749"],
-    ],
-    finish: ["35.22133", "128.86073"],
-  });
+app.get("/map/position", (req, res) => {
+  async function regionLatLongResult(locationName, len){
+    let options = {
+      provider: 'openstreetmap'
+      //provider: 'google',
+      //apiKey: 'AIzaSyAABBZO0m-jR5wY9qu8ErDzlBb_OLlQbRE'
+    };
+    let geoCoder = nodeGeocoder(options);
+    Lat = 0
+    Long = 0
+    addr = []
+    geoCoder.geocode(locationName).then((res)=> {
+      // console.log(res[0].latitude);
+      // console.log(res[0].longitude);
+      Lat = res[0].latitude; //위도
+      Long =  res[0].longitude; //경도
+    }).then((result) => {
+      // console.log(Lat, Long)
+      addr.push([String(Lat), String(Long)]);
+    }).then((result) => {
+      if(len == addr.length){
+        res.json({
+          start: addr[0],
+          waypoint: addr.slice(1,-1),
+          finish: addr[addr.length-1]
+        })
+      }
+    })
+  }
+
+  terminalAddr = req.query.terminalAddr
+  deliveryPK = req.query.deliveryPK
+  connection.query(String.format("SELECT receiverAddr1, receiverAddr2, receiverAddr3 FROM workItem WHERE deliveryPK IN ({0})", deliveryPK), (err, rows) => {
+    if(err){
+      res.json({
+        success: false, 
+        err,
+      });
+    }
+    else{
+      regionLatLongResult(terminalAddr, rows.length+1)
+      rows.map((v) => {
+        address = [v['receiverAddr1'], v['receiverAddr2'], v['receiverAddr3']].join(' ')
+        regionLatLongResult(address, rows.length+1)
+      })
+    }
+  })
 });
+
+app.get("/item/detail", (req, res) => {
+  deliveryPK = req.query.deliveryPK
+  connection.query(String.format("SELECT * FROM workItem AS a INNER JOIN itemDetail AS b WHERE a.deliveryPK = b.deliveryPK AND a.deliveryPK={0}", deliveryPK), (err, rows) => {
+    if(err){
+      res.json({
+        success: false, 
+        err,
+      });
+    }
+    else{
+      rows = rows[0]
+      res.json({
+        deliveryPK: rows['deliveryPK'],
+        workPK: rows['workPK'],
+        sender: rows['sender'],
+        receiver: rows['receiver'],
+        itemCategory: rows['itemCategory'],
+        senderAddr: [rows['senderAddr1'], rows['senderAddr2'], rows['senderAddr3']].join(' '),
+        receiverAddr: [rows['receiverAddr1'], rows['receiverAddr2'], rows['receiverAddr3']].join(' '),
+        complete: rows['complete'],
+        comment: rows['comment'],
+        CompleteTime: rows['CompleteTime'],
+        receipt: rows['receipt'],
+        recipient: rows['recipient'],
+        picture: rows['picture']
+      })
+    }
+  })
+})
+
+app.post("/item/update", (req, res) => {
+  deliveryPK = req.body.deliveryPK
+  completeTime = req.body.completeTime
+  receipt = req.body.receipt
+  receipient = req.body.receipient
+  picture = req.body.picture
+  console.log(picture)
+  connection.query(String.format("UPDATE itemDetail SET completeTime=NOW() receipt={0} receipient={1} picture={2} WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK), (err, rows) => {
+    if(err){
+      res.json({
+        success: false, 
+        err,
+      });
+    }
+    else{
+      res.json({
+        success: true,
+      });
+    }
+  })
+})
+
+
 
 
 app.listen(3000, () => console.log("listining on port 3000"));
