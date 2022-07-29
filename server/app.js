@@ -129,7 +129,7 @@ app.get("/works/register", (req, res) => {
   workPK = -1
   connection.query(String.format("SELECT COUNT(*) FROM workInfo WHERE workPK={0}", workPK), (err, rows) => {
     if(rows != 0){
-        connection.query(String.format("INSERT INTO workInfo VALUES (NULL, {0}, {1}, {2}, {3}, {4}, {5})",
+        connection.query(String.format("INSERT INTO workInfo VALUES (NULL, {0}, {1}, {2}, {3}, {4}, {5}, 0, NULL)",
         deliveryManID,deliveryDate,deliveryType,deliveryTime,deliveryCar,terminalAddr), (err, rows) => {
         if (err) {
           res.json({
@@ -137,34 +137,36 @@ app.get("/works/register", (req, res) => {
             err,
           });
         }
-        console.log("1 recored inserted workInfo table")
-        connection.query("SELECT MAX(workPK) FROM workInfo", (err, rows) => {
-          if (err) {
-            
-          }
-          workPK = rows[0]['MAX(workPK)']
-        });
-        deliveryPK.map((v) => {
-          console.log(String.format("INSERT INTO itemDetail VALUES ({0},{1},{2},{3},{4},{5})", v, "'개가뭅니다'", "NULL", "NULL", "NULL", "NULL"))
-          connection.query(String.format("SELECT COUNT(*) FROM itemDetail WHERE deliveryPK={0}", v), (err, rows) => {
-            if(rows != 0){
-              connection.query(String.format("INSERT INTO itemDetail VALUES ({0},{1},{2},{3},{4},{5})", v, "'개가뭅니다'", "NULL", "NULL", "NULL", "NULL"), (err, row) => {})
+        else{
+          console.log("1 recored inserted workInfo table")
+          connection.query("SELECT MAX(workPK) FROM workInfo", (err, rows) => {
+            if (err) {
               
-              connection.query(String.format("SELECT * FROM deliveryInfo WHERE deliveryPK={0}", v), (err, row) => {
-                row = row[0]
-                connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0)",
-                v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
-                  if(err) {
-                    res.json({
-                      success: false, 
-                      err,
-                    });
-                  }
-                })
-              })
             }
-          })
-        });
+            workPK = rows[0]['MAX(workPK)']
+          });
+          deliveryPK.map((v) => {
+            console.log(String.format("INSERT INTO itemDetail VALUES ({0},{1},{2},{3},{4},{5})", v, "'개가뭅니다'", "NULL", "NULL", "NULL", "NULL"))
+            connection.query(String.format("SELECT COUNT(*) FROM itemDetail WHERE deliveryPK={0}", v), (err, rows) => {
+              if(rows != 0){
+                connection.query(String.format("INSERT INTO itemDetail VALUES ({0},{1},{2},{3},{4},{5})", v, "'개가뭅니다'", "NULL", "NULL", "NULL", "NULL"), (err, row) => {})
+                
+                connection.query(String.format("SELECT * FROM deliveryInfo WHERE deliveryPK={0}", v), (err, row) => {
+                  row = row[0]
+                  connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0)",
+                  v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
+                    if(err) {
+                      res.json({
+                        success: false, 
+                        err,
+                      });
+                    }
+                  })
+                })
+              }
+            })
+          });
+        }
         console.log(String(deliveryPK.length)+" recored inserted workItem table")
         res.json({
           sucess: true
@@ -192,17 +194,20 @@ app.get("/works/check", (req, res) => {
         err,
       });
     }
-    rows = rows.map((v) => { return {
-      workPK: v['workPK'],
-      deliveryDate: v['deliveryDate'],
-      deliveryType: type[v['deliveryType']],
-      deliveryTime: time[v['deliveryTime']],
-      deliveryCar: v['deliveryCar'],
-      terminalAddr: terminalAddress[v['terminalAddr']],
-    }})
-    res.json({
-      rows: rows
-    })
+    else{
+      rows = rows.map((v) => { return {
+        workPK: v['workPK'],
+        deliveryDate: v['deliveryDate'],
+        deliveryType: type[v['deliveryType']],
+        deliveryTime: time[v['deliveryTime']],
+        deliveryCar: v['deliveryCar'],
+        terminalAddr: terminalAddress[v['terminalAddr']],
+        workState: v['workState']
+      }})
+      res.json({
+        rows: rows
+      })
+    }
   })
 });
 
@@ -215,18 +220,43 @@ app.get("/works/itemlist", (req, res) => {
         err,
       });
     }
-    rows = rows.map((v) => { return {
-      deliveryPK: v['deliveryPK'],
-      sender: v['sender'],
-      receiver: v['receiver'],
-      itemCategory: v['itemCategory'],
-      senderAddr: [v['senderAddr1'],v['senderAddr2'],v['senderAddr3']].join(' '),
-      receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' ')
-    }})
-    res.json({
-      rows: rows
-    })
+    else{
+      rows = rows.map((v) => { return {
+        deliveryPK: v['deliveryPK'],
+        sender: v['sender'],
+        receiver: v['receiver'],
+        itemCategory: v['itemCategory'],
+        senderAddr: [v['senderAddr1'],v['senderAddr2'],v['senderAddr3']].join(' '),
+        receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' ')
+      }})
+      res.json({
+        rows: rows
+      })
+    }
   })
+});
+
+app.get("/works/update", (req, res) => {
+  workPK = req.query.workPK
+  workState = req.query.workState
+  comment = ""
+  if(workState == 1){
+    today = new Date();
+    comment = today.toLocaleString('ko-kr')+" 모집 취소하였음."
+  }
+  connection.query(String.format("UPDATE workInfo SET workState={0}, comment='{1}' WHERE workPK={2}", workState, comment, workPK), (err, rows) => {
+    if(err){
+      res.json({
+        success: false, 
+        err,
+      });
+    }
+    else{
+      res.json({
+        sucess: true
+      });
+    }
+  });
 });
 
 app.get("/map/position", (req, res) => {
@@ -317,7 +347,7 @@ app.post("/item/update", (req, res) => {
   receipient = req.query.receipient
   picture = req.query.picture
   console.log(picture)
-  connection.query(String.format("UPDATE itemDetail SET completeTime=NOW() AND receipt='{0}' AND recipient='{1}' AND picture='{2}' WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK), (err, rows) => {
+  connection.query(String.format("UPDATE itemDetail SET completeTime=NOW(), receipt='{0}', recipient='{1}', picture='{2}' WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK), (err, rows) => {
     connection.query(String.format("UPDATE workItem SET complete={0} WHERE deliveryPK={1}", complete, deliveryPK), (err, row) => {})
     if(err){
       res.json({

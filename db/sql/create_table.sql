@@ -5,7 +5,9 @@ CREATE TABLE workInfo(
        deliveryType Boolean,
        deliveryTime Boolean,
        deliveryCar VARCHAR(10),
-       terminalAddr VARCHAR(100)
+       terminalAddr VARCHAR(100),
+       workState INT,
+       comment VARCHAR(100)
 );
 CREATE TABLE workItem(
        deliveryPK INT PRIMARY KEY,
