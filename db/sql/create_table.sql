@@ -26,10 +26,19 @@ CREATE TABLE workItem(
 CREATE TABLE itemDetail(
        deliveryPK INT PRIMARY KEY,
        comment VARCHAR(200),
-       completeTime DATETIME,
+       completeTime VARCHAR(40),
        receipt VARCHAR(15),
        recipient VARCHAR(15),
        picture BLOB
+);
+CREATE TABLE workDetail(
+       workPK INT PRIMARY KEY,
+       deliveryManID VARCHAR(16),
+       itemNum INT,
+       completeNum INT,
+       income INT,
+       startTime VARCHAR(40),
+       endTime VARCHAR(40)
 );
 CREATE TABLE deliveryInfo(
        deliveryPK INT PRIMARY KEY, 

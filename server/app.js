@@ -75,6 +75,22 @@ app.get("/item", (req, res) => {
   });
 });
 
+app.get("/workDetail", (req, res) => {
+  connection.query("SELECT * FROM workDetail", (err, rows) => {
+    if (err) {
+      res.json({
+        success: false, 
+        err,
+      });
+    } else {
+      res.json({
+        success: true,
+        rows,
+      });
+    }
+  });
+});
+
 app.get("/works", (req, res) => {
   deliveryDate = req.query.deliveryDate
   receiverAdd1 = "'"+req.query.receiverAdd1.split(',').join("','")+"'"
@@ -166,11 +182,11 @@ app.get("/works/register", (req, res) => {
               }
             })
           });
+          console.log(String(deliveryPK.length)+" recored inserted workItem table")
+          res.json({
+            sucess: true
+          })
         }
-        console.log(String(deliveryPK.length)+" recored inserted workItem table")
-        res.json({
-          sucess: true
-        })
       });
     }
     else{
@@ -202,7 +218,8 @@ app.get("/works/check", (req, res) => {
         deliveryTime: time[v['deliveryTime']],
         deliveryCar: v['deliveryCar'],
         terminalAddr: terminalAddress[v['terminalAddr']],
-        workState: v['workState']
+        workState: v['workState'],
+        comment: v['comment']
       }})
       res.json({
         rows: rows
@@ -236,6 +253,35 @@ app.get("/works/itemlist", (req, res) => {
   })
 });
 
+app.get("/works/start", (req, res) => {
+  workPK = req.query.workPK
+  deliveryManID = req.query.deliveryManID
+  connection.query(String.format("SELECT COUNT(*) FROM workItem WHERE workPK={0} AND complete=0", workPK), (err, rows) => {
+    if(err){
+      res.json({
+        success: false, 
+        err,
+      });
+    }
+    else{
+      itemNum = rows[0]['COUNT(*)']
+      connection.query(String.format("INSERT INTO workDetail VALUES ({0}, '{1}', {2}, NULL, 0, DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), NULL)", workPK, deliveryManID, itemNum), (err, row) => {
+        if(err){
+          res.json({
+            success: false,
+            err
+          })
+        }
+        else{
+          res.json({
+            success: true,
+          })
+        }
+      })
+    }
+  })
+})
+
 app.get("/works/update", (req, res) => {
   workPK = req.query.workPK
   workState = req.query.workState
@@ -258,6 +304,40 @@ app.get("/works/update", (req, res) => {
     }
   });
 });
+
+app.get("/works/complete", (req, res) => {
+  workPK = req.query.workPK
+  completeNum = req.query.completeNum
+  income = completeNum * 3000
+  connection.query(String.format("UPDATE workDetail SET endTime=DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), completeNum={0}, income={1} WHERE workPK={2}", completeNum, income, workPK), (err, rows) => {
+    if(err){
+      res.json({
+        success: false,
+        err
+      })
+    }
+    else{
+      connection.query(String.format("UPDATE workInfo SET workState={0} WHERE workPK={1}", 2, workPK), (err, rows) => {
+        if(err){
+          res.json({
+            sucess: false,
+            err
+          })
+        }
+        else{
+          res.json({
+            success: true
+          })
+        }
+      })
+    }
+  })
+})
+
+app.get("/works/detail", (req, res) => {
+  workPK = req.query.workPK
+
+})
 
 app.get("/map/position", (req, res) => {
   async function regionLatLongResult(locationName, len){
@@ -310,7 +390,7 @@ app.get("/map/position", (req, res) => {
 
 app.get("/item/detail", (req, res) => {
   deliveryPK = req.query.deliveryPK
-  connection.query(String.format("SELECT * FROM workItem AS a INNER JOIN itemDetail AS b WHERE a.deliveryPK = b.deliveryPK AND a.deliveryPK={0}", deliveryPK), (err, rows) => {
+  connection.query(String.format("SELECT * FROM workItem AS a INNER JOIN itemDetail AS b WHERE a.deliveryPK = b.deliveryPK AND a.deliveryPK={0} AND a.complete!=3", deliveryPK), (err, rows) => {
     if(err){
       res.json({
         success: false, 
@@ -347,7 +427,7 @@ app.post("/item/update", (req, res) => {
   receipient = req.query.receipient
   picture = req.query.picture
   console.log(picture)
-  connection.query(String.format("UPDATE itemDetail SET completeTime=NOW(), receipt='{0}', recipient='{1}', picture='{2}' WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK), (err, rows) => {
+  connection.query(String.format("UPDATE itemDetail SET completeTime=DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), receipt='{0}', recipient='{1}', picture='{2}' WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK), (err, rows) => {
     connection.query(String.format("UPDATE workItem SET complete={0} WHERE deliveryPK={1}", complete, deliveryPK), (err, row) => {})
     if(err){
       res.json({
