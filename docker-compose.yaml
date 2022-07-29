@@ -5,6 +5,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: test
+      TZ: Asia/Seoul
     restart: always
   node:
     build: ./server

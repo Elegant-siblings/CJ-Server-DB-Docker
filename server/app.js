@@ -91,6 +91,22 @@ app.get("/workDetail", (req, res) => {
   });
 });
 
+app.get("/userInfo", (req, res) => {
+  connection.query("SELECT * FROM userInfo", (err, rows) => {
+    if (err) {
+      res.json({
+        success: false, 
+        err,
+      });
+    } else {
+      res.json({
+        success: true,
+        rows,
+      });
+    }
+  });
+})
+
 app.get("/works", (req, res) => {
   deliveryDate = req.query.deliveryDate
   receiverAdd1 = "'"+req.query.receiverAdd1.split(',').join("','")+"'"
@@ -184,14 +200,14 @@ app.get("/works/register", (req, res) => {
           });
           console.log(String(deliveryPK.length)+" recored inserted workItem table")
           res.json({
-            sucess: true
+            success: true
           })
         }
       });
     }
     else{
       res.json({
-        sucess: False,
+        success: False,
         msg: "already exists workPK"
       })
     }
@@ -299,7 +315,7 @@ app.get("/works/update", (req, res) => {
     }
     else{
       res.json({
-        sucess: true
+        success: true
       });
     }
   });
@@ -320,7 +336,7 @@ app.get("/works/complete", (req, res) => {
       connection.query(String.format("UPDATE workInfo SET workState={0} WHERE workPK={1}", 2, workPK), (err, rows) => {
         if(err){
           res.json({
-            sucess: false,
+            success: false,
             err
           })
         }
@@ -336,7 +352,40 @@ app.get("/works/complete", (req, res) => {
 
 app.get("/works/detail", (req, res) => {
   workPK = req.query.workPK
-
+  connection.query(String.format("SELECT a.*, b.itemNum, b.completeNum, b.income, b.startTime, b.endTime FROM workInfo AS a INNER JOIN workDetail AS b WHERE a.workPK={0} AND a.workPK = b.workPK", workPK), (err, rows) => {
+    if(err){
+      res.json({
+        success: false,
+        err
+      })
+    }
+    else{
+      workInfo = rows[0]
+      connection.query(String.format("SELECT * FROM workItem WHERE workPK={0} AND complete!=3", workPK), (err, rows) => {
+        if(err){
+          res.json({
+            success: false,
+            err
+          })
+        }
+        else{
+          itemList = rows.map((v) => {
+            return {
+              deliveryPK: v['deliveryPK'],
+              itemCategory: v['itemCategory'],
+              senderAddr: [v['senderAddr1'],v['senderAddr2'],v['senderAddr3']].join(' '),
+              receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' '),
+              complete: v['complete']
+            }
+          })
+          res.json({
+            workInfo: workInfo,
+            itemList: itemList
+          })
+        }
+      })
+    }
+  })
 })
 
 app.get("/map/position", (req, res) => {
@@ -419,8 +468,6 @@ app.get("/item/detail", (req, res) => {
 })
 
 app.post("/item/update", (req, res) => {
-  console.log(req.query)
-
   deliveryPK = req.query.deliveryPK
   complete = req.query.complete
   receipt = req.query.receipt
@@ -443,4 +490,127 @@ app.post("/item/update", (req, res) => {
   })
 })
 
-app.listen(3000, () => console.log("listining on port 3000"));
+app.get("/item/scan", (req, res) => {
+  deliveryPK = req.query.deliveryPK
+  connection.query(String.format("UPDATE workItem SET complete=3 WHERE deliveryPk IN ({0})", deliveryPK), (err, rows) => {
+    if(err){
+      res.json({
+        success: false,
+        err
+      })
+    }
+    else{
+      res.json({
+        success: true,
+      })
+    }
+  })
+})
+
+app.get("/user/idcheck", (req, res) => {
+  userID = req.query.userID
+  connection.query(String.format("SELECT COUNT(*) FROM userInfo WHERE userID='{0}'", userID), (err, rows) => {
+    if(err){
+      res.json({
+        success: false,
+        err
+      })
+    }
+    else{
+      res.json({
+        existence : Boolean(rows[0]['COUNT(*)'])
+      })
+    }
+  })
+})
+
+function makeManID(userIdentityNum){
+  ManID = ""
+  for(var i=0; i < userIdentityNum.length; i++){
+    if(userIdentityNum[i] == '-') continue
+    ManID +=  String.fromCharCode((Number(userIdentityNum[i])+i+30)%26+65)
+  }
+  ManID += ManID.slice(3,6)
+  return ManID
+}
+
+app.get("/user/register", (req, res) => {
+  userID = req.query.userID
+  userPassword = req.query.userPassword
+  userIdentityNum = req.query.userIdentityNum
+  userPhone = req.query.userPhone
+  userAccount = req.query.userAccount
+  deliveryManID = makeManID(userIdentityNum)  
+  connection.query(String.format("INSERT INTO userInfo VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', DATE_FORMAT(NOW(),'%Y.%m.%d. %r'))",userID, userPassword, userIdentityNum, userPhone, userAccount, deliveryManID), (err, rows) => {
+    if(err){
+      res.json({
+        success: false,
+        err
+      })
+    }
+    else{
+      res.json({
+        success: true,
+      })
+    }
+  })
+})
+
+app.get("/user/login", (req, res) => {
+  userID = req.query.userID
+  userPassword = req.query.userPassword
+  connection.query(String.format("SELECT COUNT(*) FROM userInfo WHERE userID='{0}'", userID), (err, rows) => {
+    if(err){
+      res.json({
+        success: false,
+        userInfo: [],
+        msg: "DB 접속 문제"
+      })
+    }
+    else{
+      idcheck = Boolean(rows[0]['COUNT(*)'])
+      if(idcheck){
+        console.log(String.format("SELECT * FROM userInfo WHERE userID='{0}' AND userPassword='{1}'", userID, userPassword))
+        connection.query(String.format("SELECT * FROM userInfo WHERE userID='{0}' AND userPassword='{1}'", userID, userPassword), (err, row) => {
+          if(err){
+            res.json({
+              success: false,
+              userInfo: [],
+              msg: "DB 접속 문제"
+            })
+          }
+          else{
+            logincheck = Boolean(row.length)
+            if(logincheck){
+              res.json({
+                success: true,
+                userInfo: row,
+                msg: "로그인에 성공하였습니다."
+              })
+            }
+            else{
+              res.json({
+                success: false,
+                userInfo: [],
+                msg: "비밀번호가 일치하지 않습니다."
+              })
+            }
+          }
+        })
+      }
+      else{
+        res.json({
+          success: false,
+          userInfo: [],
+          msg: "존재하지 않는 아이디 입니다."
+        })
+      }
+    }
+  })
+})
+
+app.listen(3000, () => {
+  console.log("listining on port 3000")
+});
+
+
