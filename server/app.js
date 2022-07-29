@@ -98,7 +98,7 @@ app.get("/works", (req, res) => {
       }})
       res.json({
         success: true,
-        rows: [ rows ] ,
+        rows: rows,
       });
     }
   });
@@ -132,7 +132,7 @@ app.get("/works/register", (req, res) => {
         connection.query(String.format("INSERT INTO workInfo VALUES (NULL, {0}, {1}, {2}, {3}, {4}, {5})",
         deliveryManID,deliveryDate,deliveryType,deliveryTime,deliveryCar,terminalAddr), (err, rows) => {
         if (err) {
-          es.json({
+          res.json({
             success: false, 
             err,
           });
@@ -146,18 +146,23 @@ app.get("/works/register", (req, res) => {
         });
         deliveryPK.map((v) => {
           console.log(String.format("INSERT INTO itemDetail VALUES ({0},{1},{2},{3},{4},{5})", v, "'개가뭅니다'", "NULL", "NULL", "NULL", "NULL"))
-          connection.query(String.format("INSERT INTO itemDetail VALUES ({0},{1},{2},{3},{4},{5})", v, "'개가뭅니다'", "NULL", "NULL", "NULL", "NULL"), (err, row) => {})
-          connection.query(String.format("SELECT * FROM deliveryInfo WHERE deliveryPK={0}", v), (err, row) => {
-            row = row[0]
-            connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0)",
-            v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
-              if(err) {
-                es.json({
-                  success: false, 
-                  err,
-                });
-              }
-            })
+          connection.query(String.format("SELECT COUNT(*) FROM itemDetail WHERE deliveryPK={0}", v), (err, rows) => {
+            if(rows != 0){
+              connection.query(String.format("INSERT INTO itemDetail VALUES ({0},{1},{2},{3},{4},{5})", v, "'개가뭅니다'", "NULL", "NULL", "NULL", "NULL"), (err, row) => {})
+              
+              connection.query(String.format("SELECT * FROM deliveryInfo WHERE deliveryPK={0}", v), (err, row) => {
+                row = row[0]
+                connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0)",
+                v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
+                  if(err) {
+                    res.json({
+                      success: false, 
+                      err,
+                    });
+                  }
+                })
+              })
+            }
           })
         });
         console.log(String(deliveryPK.length)+" recored inserted workItem table")
@@ -182,7 +187,7 @@ app.get("/works/check", (req, res) => {
   terminalAddress = {'서울' : '서울 서초구 4번길 14-2길'}
   connection.query(String.format("SELECT * FROM workInfo WHERE deliveryManID='{0}'", deliveryManID), (err, rows) => {
     if(err){
-      es.json({
+      res.json({
         success: false, 
         err,
       });
@@ -205,7 +210,7 @@ app.get("/works/itemlist", (req, res) => {
   workPK = req.query.workPK
   connection.query(String.format("SELECT * FROM workItem WHERE workPK={0}", workPK), (err, rows) => {
     if(err){
-      es.json({
+      res.json({
         success: false, 
         err,
       });
@@ -304,13 +309,16 @@ app.get("/item/detail", (req, res) => {
 })
 
 app.post("/item/update", (req, res) => {
-  deliveryPK = req.body.deliveryPK
-  completeTime = req.body.completeTime
-  receipt = req.body.receipt
-  receipient = req.body.receipient
-  picture = req.body.picture
+  console.log(req.query)
+
+  deliveryPK = req.query.deliveryPK
+  complete = req.query.complete
+  receipt = req.query.receipt
+  receipient = req.query.receipient
+  picture = req.query.picture
   console.log(picture)
-  connection.query(String.format("UPDATE itemDetail SET completeTime=NOW() receipt={0} receipient={1} picture={2} WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK), (err, rows) => {
+  connection.query(String.format("UPDATE itemDetail SET completeTime=NOW() AND receipt='{0}' AND recipient='{1}' AND picture='{2}' WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK), (err, rows) => {
+    connection.query(String.format("UPDATE workItem SET complete={0} WHERE deliveryPK={1}", complete, deliveryPK), (err, row) => {})
     if(err){
       res.json({
         success: false, 
@@ -324,8 +332,5 @@ app.post("/item/update", (req, res) => {
     }
   })
 })
-
-
-
 
 app.listen(3000, () => console.log("listining on port 3000"));
