@@ -188,10 +188,7 @@ app.get("/works/register", (req, res) => {
                   connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0)",
                   v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
                     if(err) {
-                      res.json({
-                        success: false, 
-                        err,
-                      });
+                    
                     }
                   })
                 })
