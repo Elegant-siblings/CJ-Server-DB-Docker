@@ -215,7 +215,23 @@ app.get("/works/check", (req, res) => {
   deliveryManID = req.query.deliveryManID
   type = ['일반 배송', '집화 / 반품']
   time = ['주간', '새벽']
-  terminalAddress = {'서울' : '서울 서초구 4번길 14-2길'}
+  terminalAddress = {
+    '서울' : '서울 강서구 양천로 373',
+    '부산' : '부산 사상구 장인로77번길 69',
+    '대구' : '대구 동구 금호강변로 57',
+    '인천' : '인천 계양구 아나지로 480',
+    '광주' : '광주 광산구 평동산단3번로 205',
+    '대전' : '대전 대덕구 대덕대로1447번길 39',
+    '울산' : '울산 북구 진장유통1로 59',
+    '경기' : '경기 광주시 초월읍 산수로 642-70',
+    '충북' : '충북 청주시 서원구 남이면',
+    '충남' : '충남 예산군 응봉면 예당로 1729-32',
+    '전북' : '전북 익산시 동서로47길 22-23',
+    '전남' : '전남 목포시',
+    '강원' : '강원 강릉시 경포로',
+    '경북' : '경북 김천시',
+    '경남' : '경남 진주시 정촌면 화개천로 12',
+  }
   connection.query(String.format("SELECT * FROM workInfo WHERE deliveryManID='{0}'", deliveryManID), (err, rows) => {
     if(err){
       res.json({
@@ -385,8 +401,42 @@ app.get("/works/detail", (req, res) => {
   })
 })
 
+app.get("/map/terminal", (req, res) => {
+  terminalAddress = {
+    '서울 강서구 양천로 373' : ["37.5733438", "126.8167715"],
+    '부산 사상구 장인로77번길 69' : ["35.1457806", "128.9784951"],
+    '대구 동구 금호강변로 57' : ["35.8616744", "128.7095763"],
+    '인천 계양구 아나지로 480' : ["37.525587", "126.7501383"],
+    '광주 광산구 평동산단3번로 205' : ["35.1307411", "126.7672984"],
+    '대전 대덕구 대덕대로1447번길 39' : ["36.44879455", "127.40697911243774"],
+    '울산 북구 진장유통1로 59' : ["35.5775643", "129.354697"],
+    '경기 광주시 초월읍 산수로 642-70' : ["37.3711159", "127.3181407"],
+    '충북 청주시 서원구 남이면' : ["36.5606627", "127.433587"],
+    '충남 예산군 응봉면 예당로 1729-32' : ["36.6713623", "126.7424893"],
+    '전북 익산시 동서로47길 22-23' : ["35.9528468", "126.977473"],
+    '전남 목포시' : ["34.7903335", "126.3847547"],
+    '강원 강릉시 경포로 ' : ["37.7525313", "128.8759523"],
+    '경북 김천시' : ["36.07783", "128.09022"],
+    '경남 진주시 정촌면 화개천로 12' : ["35.119350499999996", "128.0995967512685"],
+  }
+
+  terminalAddr = req.query.terminalAddr
+  if(terminalAddr in terminalAddress){
+    res.json({
+      success: true,
+      position: terminalAddress[terminalAddr]
+    })
+  }
+  else{
+    res.json({
+      success: false,
+      position: []
+    })
+  }
+})
+
+
 app.get("/map/position", (req, res) => {
-  
   terminalAddr = req.query.terminalAddr
   deliveryPK = req.query.deliveryPK
   connection.query(String.format("SELECT receiverAddr1, receiverAddr2, receiverAddr3 FROM workItem WHERE deliveryPK IN ({0})", deliveryPK), (err, rows) => {
