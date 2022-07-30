@@ -386,35 +386,7 @@ app.get("/works/detail", (req, res) => {
 })
 
 app.get("/map/position", (req, res) => {
-  async function regionLatLongResult(locationName, len){
-    let options = {
-      provider: 'openstreetmap'
-      //provider: 'google',
-      //apiKey: 'AIzaSyAABBZO0m-jR5wY9qu8ErDzlBb_OLlQbRE'
-    };
-    let geoCoder = nodeGeocoder(options);
-    Lat = 0
-    Long = 0
-    addr = []
-    geoCoder.geocode(locationName).then((res)=> {
-      // console.log(res[0].latitude);
-      // console.log(res[0].longitude);
-      Lat = res[0].latitude; //위도
-      Long =  res[0].longitude; //경도
-    }).then((result) => {
-      // console.log(Lat, Long)
-      addr.push([String(Lat), String(Long)]);
-    }).then((result) => {
-      if(len == addr.length){
-        res.json({
-          start: addr[0],
-          waypoint: addr.slice(1,-1),
-          finish: addr[addr.length-1]
-        })
-      }
-    })
-  }
-
+  
   terminalAddr = req.query.terminalAddr
   deliveryPK = req.query.deliveryPK
   connection.query(String.format("SELECT receiverAddr1, receiverAddr2, receiverAddr3 FROM workItem WHERE deliveryPK IN ({0})", deliveryPK), (err, rows) => {
@@ -425,10 +397,45 @@ app.get("/map/position", (req, res) => {
       });
     }
     else{
-      regionLatLongResult(terminalAddr, rows.length+1)
+      receiveCount = 0
+      function regionLatLongResult(locationName, count, len){
+        let options = {
+          provider: 'openstreetmap'
+          //provider: 'google',
+          //apiKey: 'AIzaSyAABBZO0m-jR5wY9qu8ErDzlBb_OLlQbRE'
+        };
+        let geoCoder = nodeGeocoder(options);
+        Lat = 0
+        Long = 0
+        geoCoder.geocode(locationName).then((res)=> {
+          // console.log(res[0])
+          
+          // console.log(res[0].latitude);
+          // console.log(res[0].longitude);
+          Lat = res[0].latitude; //위도
+          Long =  res[0].longitude; //경도
+        }).then((result) => {
+          // console.log(Lat, Long)
+          addr[count] = [String(Lat), String(Long)];
+          receiveCount += 1
+        }).then((result) => {
+          if(receiveCount == addr.length-1){
+            // console.log(addr)
+            res.json({
+              start: addr[0],
+              waypoint: addr.slice(1,-2),
+              finish: addr[addr.length-2]
+            })
+          }
+        })
+      }
+      addr = Array.from({length: rows.length+2}, () => 0);
+      regionLatLongResult(terminalAddr, 0, rows.length+1)
+      count = 1
       rows.map((v) => {
         address = [v['receiverAddr1'], v['receiverAddr2'], v['receiverAddr3']].join(' ')
-        regionLatLongResult(address, rows.length+1)
+        regionLatLongResult(address, count, rows.length+1)
+        count += 1
       })
     }
   })
