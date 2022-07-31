@@ -639,7 +639,7 @@ app.get("/user/login", (req, res) => {
             if(logincheck){
               res.json({
                 success: true,
-                userInfo: row,
+                userInfo: row[0],
                 msg: "로그인에 성공하였습니다."
               })
             }
