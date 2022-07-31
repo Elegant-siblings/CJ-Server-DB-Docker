@@ -273,7 +273,8 @@ app.get("/works/itemlist", (req, res) => {
         receiver: v['receiver'],
         itemCategory: v['itemCategory'],
         senderAddr: [v['senderAddr1'],v['senderAddr2'],v['senderAddr3']].join(' '),
-        receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' ')
+        receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' '),
+        complete: v['complete']
       }})
       res.json({
         rows: rows
@@ -512,7 +513,7 @@ app.get("/item/detail", (req, res) => {
         receiverAddr: [rows['receiverAddr1'], rows['receiverAddr2'], rows['receiverAddr3']].join(' '),
         complete: rows['complete'],
         comment: rows['comment'],
-        CompleteTime: rows['CompleteTime'],
+        completeTime: rows['completeTime'],
         receipt: rows['receipt'],
         recipient: rows['recipient'],
         picture: rows['picture']
