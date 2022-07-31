@@ -185,12 +185,10 @@ app.get("/works/register", (req, res) => {
                 
                 connection.query(String.format("SELECT * FROM deliveryInfo WHERE deliveryPK={0}", v), (err, row) => {
                   row = row[0]
+                  console.log("DELETE FROM deliveryInfo WHERE deliveryPK={0}", deliveryPK)
                   connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0, 0)",
-                  v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
-                    if(err) {
-                    
-                    }
-                  })
+                  v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {})
+                  connection.query(String.format("DELETE FROM deliveryInfo WHERE deliveryPK IN ({0})", deliveryPK), (err, rows) => {})
                 })
               }
             })
@@ -284,6 +282,7 @@ app.get("/works/itemlist", (req, res) => {
 });
 
 app.get("/works/start", (req, res) => {
+  console.log(req.query)
   workPK = req.query.workPK
   deliveryManID = req.query.deliveryManID
   deliveryPK = req.query.deliveryPK.split(',')
