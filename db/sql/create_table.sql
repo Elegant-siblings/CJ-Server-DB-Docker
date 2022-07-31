@@ -21,7 +21,8 @@ CREATE TABLE workItem(
        receiverAddr1 VARCHAR(60),
        receiverAddr2 VARCHAR(60),
        receiverAddr3 VARCHAR(60),
-       complete INT
+       complete INT,
+       seatNum INT
 );
 CREATE TABLE itemDetail(
        deliveryPK INT PRIMARY KEY,

@@ -185,7 +185,7 @@ app.get("/works/register", (req, res) => {
                 
                 connection.query(String.format("SELECT * FROM deliveryInfo WHERE deliveryPK={0}", v), (err, row) => {
                   row = row[0]
-                  connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0)",
+                  connection.query(String.format("INSERT INTO workItem VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, 0, 0)",
                   v, workPK, SQLString(row['sender']), SQLString(row['receiver']), SQLString(row['itemCategory']), SQLString(row['senderAddr1']), SQLString(row['senderAddr2']), SQLString(row['senderAddr3']), SQLString(row['receiverAddr1']), SQLString(row['receiverAddr2']), SQLString(row['receiverAddr3'])), (err, ans) => {
                     if(err) {
                     
@@ -286,7 +286,9 @@ app.get("/works/itemlist", (req, res) => {
 app.get("/works/start", (req, res) => {
   workPK = req.query.workPK
   deliveryManID = req.query.deliveryManID
-  connection.query(String.format("SELECT COUNT(*) FROM workItem WHERE workPK={0} AND complete=0", workPK), (err, rows) => {
+  deliveryPK = req.query.deliveryPK.split(',')
+  seatNum = req.query.seatNum.split(',')
+  connection.query(String.format("SELECT deliveryPK FROM workItem WHERE workPK={0} AND complete=0", workPK), (err, rows) => {
     if(err){
       res.json({
         success: false, 
@@ -294,7 +296,7 @@ app.get("/works/start", (req, res) => {
       });
     }
     else{
-      itemNum = rows[0]['COUNT(*)']
+      itemNum = rows.length
       connection.query(String.format("INSERT INTO workDetail VALUES ({0}, '{1}', {2}, NULL, 0, DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), NULL)", workPK, deliveryManID, itemNum), (err, row) => {
         if(err){
           res.json({
@@ -303,6 +305,13 @@ app.get("/works/start", (req, res) => {
           })
         }
         else{
+          for(var i = 0; i < itemNum; i++){
+            connection.query(String.format("UPDATE workItem SET seatNum={0} WHERE deliveryPK={1} AND workPK={2}",seatNum[i], deliveryPK[i], workPK), (err, rows) => {
+              if(err){
+
+              }
+            })
+          }
           res.json({
             success: true,
           })
@@ -384,13 +393,18 @@ app.get("/works/detail", (req, res) => {
         }
         else{
           itemList = rows.map((v) => {
-            return {
-              deliveryPK: v['deliveryPK'],
-              itemCategory: v['itemCategory'],
-              senderAddr: [v['senderAddr1'],v['senderAddr2'],v['senderAddr3']].join(' '),
-              receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' '),
-              complete: v['complete']
-            }
+            connection.query(String.format("SELECT seatNum FROM itemSeat WHERE workPK={0} AND deliveryPK={1}", workPK, v['deliveryPK']), (err, rows) => {
+              console.log(rows)
+              seatNum = rows[0]['seatNum']
+              return {
+                deliveryPK: v['deliveryPK'],
+                itemCategory: v['itemCategory'],
+                senderAddr: [v['senderAddr1'],v['senderAddr2'],v['senderAddr3']].join(' '),
+                receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' '),
+                complete: v['complete'],
+                seatNum: seatNum
+              }
+            })
           })
           res.json({
             workInfo: workInfo,
