@@ -393,18 +393,14 @@ app.get("/works/detail", (req, res) => {
         }
         else{
           itemList = rows.map((v) => {
-            connection.query(String.format("SELECT seatNum FROM itemSeat WHERE workPK={0} AND deliveryPK={1}", workPK, v['deliveryPK']), (err, rows) => {
-              console.log(rows)
-              seatNum = rows[0]['seatNum']
               return {
                 deliveryPK: v['deliveryPK'],
                 itemCategory: v['itemCategory'],
                 senderAddr: [v['senderAddr1'],v['senderAddr2'],v['senderAddr3']].join(' '),
                 receiverAddr: [v['receiverAddr1'],v['receiverAddr2'],v['receiverAddr3']].join(' '),
                 complete: v['complete'],
-                seatNum: seatNum
+                seatNum: v['seatNum']
               }
-            })
           })
           res.json({
             workInfo: workInfo,
