@@ -630,7 +630,7 @@ app.get("/user/login", (req, res) => {
           if(err){
             res.json({
               success: false,
-              userInfo: [],
+              userInfo: null,
               msg: "DB 접속 문제"
             })
           }
@@ -646,7 +646,7 @@ app.get("/user/login", (req, res) => {
             else{
               res.json({
                 success: false,
-                userInfo: [],
+                userInfo: null,
                 msg: "비밀번호가 일치하지 않습니다."
               })
             }
@@ -656,7 +656,7 @@ app.get("/user/login", (req, res) => {
       else{
         res.json({
           success: false,
-          userInfo: [],
+          userInfo: null,
           msg: "존재하지 않는 아이디 입니다."
         })
       }
