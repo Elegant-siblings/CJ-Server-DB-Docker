@@ -30,7 +30,7 @@ CREATE TABLE itemDetail(
        completeTime VARCHAR(40),
        receipt VARCHAR(15),
        recipient VARCHAR(15),
-       picture BLOB
+       picture TEXT
 );
 CREATE TABLE workDetail(
        workPK INT PRIMARY KEY,
