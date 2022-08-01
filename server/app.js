@@ -537,7 +537,7 @@ app.post("/item/update", (req, res) => {
   receipt = req.query.receipt
   receipient = req.query.receipient
   picture = req.query.picture
-  console.log(picture)
+  console.log(String.format("UPDATE itemDetail SET completeTime=DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), receipt='{0}', recipient='{1}', picture='{2}' WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK))
   connection.query(String.format("UPDATE itemDetail SET completeTime=DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), receipt='{0}', recipient='{1}', picture='{2}' WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK), (err, rows) => {
     connection.query(String.format("UPDATE workItem SET complete={0} WHERE deliveryPK={1}", complete, deliveryPK), (err, row) => {})
     if(err){
