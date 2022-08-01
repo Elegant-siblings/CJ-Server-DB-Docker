@@ -531,7 +531,7 @@ app.get("/item/detail", (req, res) => {
   })
 })
 
-app.post("/item/update", (req, res) => {
+app.get("/item/update", (req, res) => {
   deliveryPK = req.query.deliveryPK
   complete = req.query.complete
   receipt = req.query.receipt
