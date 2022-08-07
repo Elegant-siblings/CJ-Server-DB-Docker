@@ -493,7 +493,9 @@ app.get("/map/position", (req, res) => {
       regionLatLongResult(terminalAddr, 0, rows.length+1)
       count = 1
       rows.sort(function(a,b) {
-        return a['receiverAddr2'] > b['receiverAddr2']
+        a_address = [a['receiverAddr1'], a['receiverAddr2'], a['receiverAddr3']].join(' ')
+        b_address = [b['receiverAddr1'], b['receiverAddr2'], b['receiverAddr3']].join(' ')
+        return a_address > b_address
       })
       rows.map((v) => {
         address = [v['receiverAddr1'], v['receiverAddr2'], v['receiverAddr3']].join(' ')
