@@ -1,7 +1,8 @@
 FROM mysql
 
-COPY ./cj_delivery.csv /var/lib/mysql-files/
-COPY ./delivery_final.csv /var/lib/mysql-files/
+# COPY ./cj_delivery.csv /var/lib/mysql-files/
+# COPY ./delivery_final.csv /var/lib/mysql-files/
+COPY ./delivery_pickup_final_ver /var/lib/mysql-files/
 
 COPY ./sql/create_table.sql /docker-entrypoint-initdb.d/
 
