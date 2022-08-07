@@ -476,7 +476,7 @@ app.get("/map/position", (req, res) => {
           Long =  res[0].longitude; //경도
         }).then((result) => {
           // console.log(Lat, Long)
-          addr[count] = [String(Lat), String(Long)];
+          addr[count] = [String(Lat+0.1*count), String(Long+0.1*count)];
           receiveCount += 1
         }).then((result) => {
           if(receiveCount == addr.length-1){

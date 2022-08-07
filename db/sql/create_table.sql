@@ -67,7 +67,7 @@ CREATE TABLE deliveryInfo(
 );
 SET GLOBAL TIME_ZONE = 'Asia/Seoul';
 SET TIME_ZONE = 'Asia/Seoul';
-LOAD DATA INFILE '/var/lib/mysql-files/delivery_final.csv' INTO TABLE deliveryInfo FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA INFILE '/var/lib/mysql-files/delivery_pickup_final_ver.csv' INTO TABLE deliveryInfo FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 -- LOAD DATA INFILE '/var/lib/mysql-files/cj_delivery.csv' INTO TABLE deliveryInfo FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 ALTER USER 'root' IDENTIFIED WITH mysql_native_password BY 'password';
 flush privileges;
