@@ -540,10 +540,10 @@ app.get("/item/update", (req, res) => {
   deliveryPK = req.query.deliveryPK
   complete = req.query.complete
   receipt = req.query.receipt
-  receipient = req.query.receipient
+  recipient = req.query.recipient
   picture = req.query.picture
-  console.log(String.format("UPDATE itemDetail SET completeTime=DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), receipt='{0}', recipient='{1}', picture='{2}' WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK))
-  connection.query(String.format("UPDATE itemDetail SET completeTime=DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), receipt='{0}', recipient='{1}', picture='{2}' WHERE deliveryPK={3}", receipt, receipient, picture, deliveryPK), (err, rows) => {
+  console.log(String.format("UPDATE itemDetail SET completeTime=DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), receipt='{0}', recipient='{1}', picture='{2}' WHERE deliveryPK={3}", receipt, recipient, picture, deliveryPK))
+  connection.query(String.format("UPDATE itemDetail SET completeTime=DATE_FORMAT(NOW(),'%Y.%m.%d. %r'), receipt='{0}', recipient='{1}', picture='{2}' WHERE deliveryPK={3}", receipt, recipient, picture, deliveryPK), (err, rows) => {
     connection.query(String.format("UPDATE workItem SET complete={0} WHERE deliveryPK={1}", complete, deliveryPK), (err, row) => {})
     if(err){
       res.json({
